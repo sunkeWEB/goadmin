@@ -2,7 +2,10 @@ package models
 
 import (
 	"errors"
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
+	"go-admin/common/dto"
 	orm "go-admin/common/global"
+	"go-admin/tools/excel"
 )
 
 type Student struct {
@@ -65,10 +68,19 @@ func (s *Student) GetPage(pageIndex int, pageSize int) ([]Student, int, error) {
 	}
 	var count int64
 
-	if err := table.Order("created_At").Offset((pageIndex - 1) * pageSize).Limit(pageSize).Find(&doc).Offset(-1).Limit(-1).Count(&count).Error; err != nil {
+	if err := table.Order("created_At").Scopes(dto.FindPage(pageSize, pageIndex, &count, &doc)).Error; err != nil {
 		return nil, 0, err
 	}
 	return doc, int(count), nil
+}
+
+func (s *Student) allData() ([]map[string]interface{}, error) {
+	var doc []map[string]interface{}
+	table := orm.Eloquent.Table(s.TableName())
+	if err := table.Find(&doc).Error; err != nil {
+		return doc, err
+	}
+	return doc, nil
 }
 
 /**
@@ -96,4 +108,28 @@ func (s *Student) DeleteStudent() (update Student, err error) {
 		return
 	}
 	return
+}
+
+/**
+导出
+*/
+func (s *Student) Export() *excelize.File {
+	var excelUtil excel.ExcelUtils
+	var f = excelUtil.CreateFile()
+
+	title := []map[string]string{
+		{"label": "姓名", "key": "name"},
+		{"label": "学号", "key": "student_id"},
+		{"label": "性别", "key": "sex"},
+		{"label": "年级", "key": "grade"},
+	}
+
+	data, _ := s.allData()
+
+	f, err := excelUtil.Export(title, data)
+	if err != nil {
+
+	}
+
+	return f
 }

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
@@ -21,6 +23,19 @@ func main() {
 	mycasbin.Setup()
 	logger.Setup()
 	global.GinEngine = gin.Default()
+	global.GinEngine.Use(MiddleWareA())
 	//router.InitRouter()
 	log.Fatal(global.GinEngine.Run(":8000"))
+}
+
+func MiddleWareA() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		t := time.Now()
+		fmt.Println("中间件开始执行了")
+		c.Set("request", "中间件")
+		status := c.Writer.Status()
+		fmt.Println("中间件执行完毕", status)
+		t2 := time.Since(t)
+		fmt.Println("time:", t2)
+	}
 }

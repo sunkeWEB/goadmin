@@ -13,6 +13,15 @@
               @click="handleAdd"
             >新增</el-button>
           </el-col>
+          <el-col :span="1.5">
+            <el-button
+              v-permisaction="['system:sysdicttype:export']"
+              type="warning"
+              icon="el-icon-download"
+              size="mini"
+              @click="handleExport"
+            >导出</el-button>
+          </el-col>
         </el-row>
 
         <el-table
@@ -280,6 +289,9 @@ export default {
 
       this.open = true
       this.title = '添加学生信息'
+    },
+    handleExport() {
+      window.open('http://127.0.0.1:8000/api/v1/export/学生列表')
     },
     async handleDelete(row) {
       this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {

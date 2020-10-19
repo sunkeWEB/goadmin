@@ -83,3 +83,22 @@ func Paginate(pageSize, pageIndex int) func(db *gorm.DB) *gorm.DB {
 		return db.Offset(offset).Limit(pageSize)
 	}
 }
+
+func DataCount() func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Offset(-1).Limit(-1)
+	}
+}
+
+func FindPage(pageSize, pageIndex int, count *int64, dest interface{}, conds ...interface{}) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		offset := (pageIndex - 1) * pageSize
+		if offset < 0 {
+			offset = 0
+		}
+		if len(conds) > 0 {
+			return db.Offset(offset).Limit(pageSize).Find(dest, conds).Scopes(DataCount()).Count(count)
+		}
+		return db.Offset(offset).Limit(pageSize).Find(dest).Scopes(DataCount()).Count(count)
+	}
+}

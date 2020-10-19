@@ -86,3 +86,16 @@ func DeleteStudent(c *gin.Context) {
 
 	app.OK(c, "", "删除成功")
 }
+
+func Export(c *gin.Context) {
+	var data models.Student
+	f := data.Export()
+	filename := c.Param("filename")
+	if filename == "" {
+		filename = "文件"
+	}
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", "attachment; filename="+filename+".xlsx")
+	c.Header("Content-Transfer-Encoding", "binary")
+	f.Write(c.Writer)
+}

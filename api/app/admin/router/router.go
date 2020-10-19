@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/gin-gonic/gin"
 	"go-admin/app/admin/apis/article"
+	"go-admin/app/admin/apis/student"
 	"go-admin/pkg/jwtauth"
 	jwt "go-admin/pkg/jwtauth"
 )
@@ -32,7 +33,7 @@ func examplesNoCheckRoleRouter(r *gin.Engine) {
 	v1.GET("/nilcheckrole", nil)
 
 	v1.GET("/article", article.GetArticleList)
-
+	v1.GET("/export/:filename", student.Export)
 	for _, f := range routerNoCheckRole {
 		f(v1)
 	}

@@ -20,6 +20,5 @@ func registerStudentRouter(v1 *gin.RouterGroup, authMiddleware *jwt.GinJWTMiddle
 		r.PUT("/update", student.UpdateStudent)
 		r.GET("/getPage", student.GetPage)
 		r.PUT("/deleteStudent", student.DeleteStudent)
-		//r.GET("/getListAll", project.GetListAll)
 	}
 }
