@@ -175,3 +175,17 @@ func GetMenuIDS(c *gin.Context) {
 	tools.HasError(err, "获取失败", 500)
 	app.OK(c, result, "")
 }
+
+type GradeMap struct {
+	title string
+	value int
+}
+
+func GradeList(c *gin.Context) {
+	var itemMap []GradeMap
+	itemMap = append(itemMap, GradeMap{title: "高三", value: 12})
+	itemMap = append(itemMap, GradeMap{title: "高二", value: 11})
+	itemMap = append(itemMap, GradeMap{title: "高一", value: 10})
+	app.OK(c, itemMap, "")
+
+}

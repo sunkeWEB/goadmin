@@ -22,6 +22,8 @@ var Eloquent *gorm.DB
 
 var GADMCron *cron.Cron
 
+var StudentId = 0
+
 var (
 	Source string
 	Driver string

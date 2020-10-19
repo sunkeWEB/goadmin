@@ -15,7 +15,6 @@ import (
 func AuthCheckRole() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		data, _ := c.Get(jwtauth.JwtPayloadKey)
-		fmt.Println("AuthCheckRole====", data)
 
 		v := data.(jwtauth.MapClaims)
 		e := mycasbin.Casbin()

@@ -116,3 +116,22 @@ func DeletePost(c *gin.Context) {
 	tools.HasError(err, "删除失败", 500)
 	app.OK(c, result, "删除成功")
 }
+
+func GetConfigList(c *gin.Context) {
+	var data models.DictData
+	var err error
+	var pageSize = 10
+	var pageIndex = 1
+
+	if size := c.Request.FormValue("pageSize"); size != "" {
+		pageSize, err = tools.StringToInt(size)
+	}
+
+	if index := c.Request.FormValue("pageIndex"); index != "" {
+		pageIndex, err = tools.StringToInt(index)
+	}
+
+	result, count, err := data.GetPage(pageSize, pageIndex)
+	tools.HasError(err, "", -1)
+	app.PageOK(c, result, count, pageIndex, pageSize, "")
+}
