@@ -20,12 +20,13 @@ var (
 
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
 			return run()
 		},
 	}
 )
 
 func run() error {
-	fmt.Println(global.Version)
+	fmt.Printf("版本号：%s\n", global.Version)
 	return nil
 }

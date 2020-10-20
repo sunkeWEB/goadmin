@@ -3,14 +3,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
-
 	"go-admin/cmd/api"
 	"go-admin/cmd/config"
 	"go-admin/cmd/migrate"
 	"go-admin/cmd/version"
+	"os"
+
 	"go-admin/common/global"
 	"go-admin/tools"
 )
@@ -23,14 +22,14 @@ var rootCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			tip()
-			return errors.New(tools.Red("requires at least one arg"))
+			return errors.New(tools.Red("启动参数缺少"))
 		}
 		return nil
 	},
-	PersistentPreRunE: func(*cobra.Command, []string) error { return nil },
 	Run: func(cmd *cobra.Command, args []string) {
 		tip()
 	},
+	PersistentPreRunE: func(*cobra.Command, []string) error { return nil },
 }
 
 func tip() {

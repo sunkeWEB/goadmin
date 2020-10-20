@@ -43,5 +43,5 @@ func TestGoApiTemplate(t *testing.T) {
 	//defer file.Close()
 	//
 	//_ = t1.Execute(file, tab)
-	t.Log("")
+	t.Log("====sunke====")
 }
