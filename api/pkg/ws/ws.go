@@ -2,10 +2,10 @@ package ws
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"go-admin/tools"
 	"go-admin/tools/app"
 	"log"
 	"net/http"
@@ -40,6 +40,13 @@ type MessageData struct {
 	Message   []byte
 }
 
+// messageData 单个发送数据信息
+type MessageDataSimple struct {
+	Id      string `json:"id"`
+	Group   string `json:"group"`
+	Message string `json:"message"`
+}
+
 // groupMessageData 组广播数据信息
 type GroupMessageData struct {
 	Group   string
@@ -66,11 +73,25 @@ func (c *Client) Read(cxt context.Context) {
 			break
 		}
 		messageType, message, err := c.Socket.ReadMessage()
+		var messageData MessageDataSimple
+		err = json.Unmarshal(message, &messageData)
+
+		//dec := json.NewDecoder(strings.NewReader(string(message)))
+		//err = dec.Decode(&messageData)
+
+		if err != nil {
+			fmt.Printf("转换失败%s\n", err)
+		}
 		if err != nil || messageType == websocket.CloseMessage {
 			break
 		}
 		log.Printf("client [%s] receive message: %s", c.Id, string(message))
-		c.Message <- message
+
+		if messageData.Group != "" {
+			SendGroup(message, messageData.Group)
+		}
+
+		//c.Message <- message
 	}
 }
 
@@ -305,7 +326,7 @@ func (manager *Manager) WsClient(c *gin.Context) {
 	go client.Write(ctx)
 	time.Sleep(time.Second * 15)
 
-	tools.FileMonitoringById(ctx, "temp/logs/job/db-20200820.log", c.Param("id"), c.Param("channel"), SendOne)
+	//tools.FileMonitoringById(ctx, "temp/logs/job/db-20201022.log", c.Param("id"), c.Param("channel"), SendOne)
 }
 
 func (manager *Manager) UnWsClient(c *gin.Context) {
@@ -315,8 +336,8 @@ func (manager *Manager) UnWsClient(c *gin.Context) {
 	app.OK(c, "ws close success", "success")
 }
 
-func SendGroup(msg []byte) {
-	WebsocketManager.SendGroup("leffss", []byte("{\"code\":200,\"data\":"+string(msg)+"}"))
+func SendGroup(msg []byte, group string) {
+	WebsocketManager.SendGroup(group, []byte("{\"code\":200,\"data\":"+string(msg)+"}"))
 	fmt.Println(WebsocketManager.Info())
 }
 

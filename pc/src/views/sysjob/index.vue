@@ -374,6 +374,8 @@ export default {
     }
   },
   created() {
+    const wsuri = 'ws://127.0.0.1:8000/ws/' + 10 + '/test' + '?token=' + this.$store.state.user.token
+    this.websock = new WebSocket(wsuri)
     this.getList()
     this.getDicts('sys_job_group').then(response => {
       this.jobGroupOptions = response.data

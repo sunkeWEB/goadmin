@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go-admin/cmd"
 )
 
@@ -68,6 +69,74 @@ import (
 //	log.Println("Server exiting")
 //}
 
+type Movie struct {
+	Title  string
+	Year   int  `json:"released"`
+	Color  bool `json:"color,omitempty"`
+	Actors []string
+}
+
+type People interface {
+	Eat()
+	Run()
+}
+
+type Animal interface {
+	Fly()
+}
+
+type ChinaPeople struct {
+	Name string
+}
+
+func (receiver ChinaPeople) Run() {
+	fmt.Printf("%s 正在跑步\n", receiver.Name)
+}
+
+func (receiver ChinaPeople) Eat() {
+	fmt.Printf("%s 正在吃东西\n", receiver.Name)
+}
+
+func (receiver ChinaPeople) Fly() {
+	fmt.Printf("%s 正在吃东西\n", receiver.Name)
+}
+
 func main() {
 	cmd.Execute()
+	//var p People = ChinaPeople{"孙科"}
+
+	//b:=p.(Animal)
+	//b.Fly()
+	//fmt.Printf("%s\n",p)
+
+	//b := [...]int{1, 2}
+	//months := []string{1: "January", 12: "December"}
+	//months=append(months,"asa")
+	//c:=months[0:1]
+	//data,err:=json.MarshalIndent(months,""," ")
+	//if err!=nil{
+	//
+	//}
+	//print(len(months),len(b),len(c))
+	//fmt.Printf("%s\n",data)
+
+	//const jsonStream = `{"Name": "Ed", "Text": "Knock knock."}`
+	//
+	//type Message struct {
+	//	Name, Text string
+	//}
+	//
+	//var m Message
+	//
+	//// 用json.NewDecoder
+	//dec := json.NewDecoder(strings.NewReader(jsonStream))
+	//dec.Decode(&m)
+	//fmt.Printf("%s: %s\n", m.Name, m.Text)
+	//
+	//// 用 json.Unmarshal
+	//json.Unmarshal([]byte(jsonStream), &m)
+	//fmt.Printf("%s: %s\n", m.Name, m.Text)
+	//
+	//fmt.Println("done")
+
 }
