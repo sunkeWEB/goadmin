@@ -87,11 +87,12 @@ func (c *Client) Read(cxt context.Context) {
 		}
 		log.Printf("client [%s] receive message: %s", c.Id, string(message))
 
-		if messageData.Group != "" {
+		if messageData.Id != "" {
+			SendOne(cxt, messageData.Id, "test", message)
+			//break
+		} else if messageData.Group != "" { // 群发
 			SendGroup(message, messageData.Group)
 		}
-
-		//c.Message <- message
 	}
 }
 

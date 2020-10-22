@@ -1,0 +1,195 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>webrtc</title>
+    <style>
+        #myVideo {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div>用户名: <span id="username"></span></div>
+
+    <div>
+        <input id="message" />
+        <input id=group value="test" />
+        <button onclick="sendMessage()">分组发送消息</button>
+    </div>
+
+    <div>
+        <input id="message1" />
+        <input id="item" value="test" />
+        <button onclick="sendItemMessage()">单独发送消息</button>
+    </div>
+    <button onclick="connect()">链接服务器</button>
+
+    <div>
+        <video id="myVideo"></video>
+        <button onclick="call()">拨打电话</button>
+    </div>
+
+    <div>
+        <p>對方的視頻流</p>
+        <video id="remoteVideo"></video>
+    </div>
+
+    <script>
+
+        function init() {
+            console.log("init")
+            username = ("" + Math.random()).replace(/\./, "")
+            document.getElementById("username").innerText = username
+        }
+        init();
+
+        function connect() {
+            console.log("connect", username)
+            ws = new WebSocket("ws://192.168.31.128:8000/ws/" + username + "/test");
+            ws.addEventListener("open", connected)
+            ws.addEventListener("message", message)
+        }
+
+        const constraints = {
+            'video': true,
+            'audio': true
+        }
+
+        /**
+            链接成功
+        */
+        function connected() {
+            console.log("链接成功")
+        }
+
+        const configuration = {
+            'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }],
+        }
+        /**
+            接收到消息
+        */
+        peerConnection = new RTCPeerConnection(configuration);
+
+        
+        peerConnection.addEventListener('icecandidate', event => {
+            console.log("==icecandidate==", event)
+            if (event.candidate) {
+                ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "candidate", candidate: event.candidate }))
+            }
+        });
+
+        peerConnection.onaddstream = function (evt) {
+            console.log("===onaddstream=",evt.stream)
+            document.getElementById("remoteVideo").srcObject = evt.stream
+            document.getElementById("remoteVideo").play()
+            console.log("==asasa==",document.getElementById("remoteVideo"))
+            // remoteView.src = URL.createObjectURL(evt.stream);
+        };
+
+        peerConnection.onnegotiationneeded = async () => {
+            try {
+                const offer = await peerConnection.createOffer();   
+                await peerConnection.setLocalDescription(offer);
+                ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "offer", offer: offer }))
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        // peerConnection.addEventListener('icecandidate', event => {
+        //     if (event.candidate) {
+        //         ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "candidate", candidate: event.candidate }))
+        //     }
+        // });
+
+
+        // peerConnection.onnegotiationneeded = async () => {
+        //     try {
+        //         const offer = await peerConnection.createOffer();
+        //         await peerConnection.setLocalDescription(offer);
+        //         ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "offer", offer: offer }))
+        //     } catch (err) {
+        //         console.error(err);
+        //     }
+        // };
+
+        var isPlay = false
+        async function message(item) {
+            const data = JSON.parse(item.data);
+            if (data.code === 200) {
+                const { type, offer,candidate } = data.data;
+                if (type === "answer") {
+                    const remoteDesc = new RTCSessionDescription(offer);
+                    await peerConnection.setRemoteDescription(remoteDesc);
+                    console.log("===peerConnection==", peerConnection)
+                } else if (type === "offer") { // 收到offer
+                    peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                    const answer = await peerConnection.createAnswer();
+                    peerConnection.setLocalDescription(answer)
+                    
+                    if(!isPlay){
+                        isPlay=true;
+                        navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+                            document.getElementById("myVideo").srcObject = stream
+                            document.getElementById("myVideo").play()
+                            peerConnection.addStream(stream);
+                        }).catch(error => {
+                            console.error('Error accessing media devices.', error);
+                        });
+                    }
+                    
+
+                    ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "answer", offer: answer }))
+                }else if(type ==="icecandidate") {
+                    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                }
+            }
+            console.log("接收到消息", data)
+        }
+
+        /**
+            发送消息
+        */
+        function sendMessage() {
+            const message = document.getElementById("message").value;
+            const group = document.getElementById("group").value;
+            ws.send(JSON.stringify({ message: message, group: group, id: "08581166447561361" }))
+        }
+
+        function sendItemMessage() {
+            const message = document.getElementById("message1").value;
+            const item = document.getElementById("item").value;
+            ws.send(JSON.stringify({ message: message, id: item }))
+        }
+
+        /**
+          拨打电话
+        */
+        function call() {
+            
+            navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+                document.getElementById("myVideo").srcObject = stream
+                document.getElementById("myVideo").play()
+                peerConnection.addStream(stream);
+                createOffer()
+            }).catch(error => {
+                console.error('Error accessing media devices.', error);
+            });
+        }
+
+
+
+        async function createOffer() {
+            const offer = await peerConnection.createOffer();
+            // await offer.setRemoteDescription()
+            await peerConnection.setLocalDescription(offer);
+            ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "offer", offer: offer }))
+        }
+
+    </script>
+</body>
+
+</html>
