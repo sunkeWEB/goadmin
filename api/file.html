@@ -1,0 +1,182 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>webrtc 文件发送</title>
+    <style>
+        #myVideo {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+<div>用户名: <span id="username"></span></div>
+
+<div>
+    <input id="message" />
+    <input id=group value="test" />
+    <button onclick="sendMessage()">分组发送消息</button>
+</div>
+
+<div>
+    <input id="message1" />
+    <input id="item" value="test" />
+    <button onclick="sendItemMessage()">单独发送消息</button>
+</div>
+<button onclick="connect()">链接服务器</button>
+
+<div>
+    <video id="myVideo"></video>
+    <button onclick="call()">拨打电话</button>
+</div>
+
+<input type="file" id="fileSelect">
+
+
+<script>
+
+    function init() {
+        console.log("init")
+        username = ("" + Math.random()).replace(/\./, "")
+        document.getElementById("username").innerText = username
+        this.connect(true)
+    }
+    init();
+
+    function connect(connect) {
+        if (!connect) return;
+        console.log("connect", username)
+        ws = new WebSocket("ws://192.168.0.78:8000/ws/" + username + "/test");
+        ws.addEventListener("open", connected)
+        ws.addEventListener("message", message)
+    }
+
+    const constraints = {
+        'video': true,
+        'audio': true
+    }
+
+    /**
+     链接成功
+     */
+    function connected() {
+        console.log("链接成功")
+    }
+
+    const configuration = {
+        'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }],
+    }
+    /**
+     接收到消息
+     */
+    peerConnection = new RTCPeerConnection(configuration);
+
+    peerConnection.addEventListener('icecandidate', event => {
+        if (event.candidate) {
+            ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "candidate", candidate: event.candidate }))
+        }
+    });
+
+    peerConnection.onnegotiationneeded = async () => {
+        try {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "offer", offer: offer }))
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    async function message(item) {
+        const data = JSON.parse(item.data);
+        if (data.code === 200) {
+            const { type, offer,candidate } = data.data;
+            if (type === "answer") {
+                const remoteDesc = new RTCSessionDescription(offer);
+                await peerConnection.setRemoteDescription(remoteDesc);
+                console.log("===peerConnection==", peerConnection)
+            } else if (type === "offer") { // 收到offer
+                peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                peerConnection.setLocalDescription(answer)
+                ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "answer", offer: answer }))
+            }else if(type ==="icecandidate") {
+                peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+        }
+        console.log("接收到消息", data)
+    }
+
+    /**
+     发送消息
+     */
+    function sendMessage() {
+        const message = document.getElementById("message").value;
+        const group = document.getElementById("group").value;
+        ws.send(JSON.stringify({ message: message, group: group, id: "08581166447561361" }))
+    }
+
+    function sendItemMessage() {
+        const text = document.getElementById("message1").value;
+        if (!text) {
+            alert("不能发送空消息")
+            return
+        }
+        dataChannel.send(text)
+    }
+
+    /**
+     拨打电话
+     */
+    function call() {
+        createOffer()
+    }
+
+    dataChannel =  peerConnection.createDataChannel("fileData");
+
+    async function createOffer() {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "offer", offer: offer }))
+    }
+
+    dataChannel.addEventListener('open', event => {
+        console.log("dataChannel open")
+    });
+
+    dataChannel.addEventListener('close', event => {
+        console.log("dataChannel close")
+    });
+
+    dataChannel.addEventListener('message', event => {
+        const message = event.data;
+        console.log("收到数据",message)
+    });
+
+
+    /**
+     * 文件選擇
+     */
+    document.getElementById("fileSelect").addEventListener("change",fileSelect)
+
+    async function fileSelect (e) {
+        console.log(e.target.value)
+    }
+
+    peerConnection.ondatachannel = function (event) {
+        console.log("dataChannel.OnMessage:", event);
+        receiveChannel = event.channel;
+        receiveChannel.onmessage = onReceiveMessageCallback;
+    };
+
+    function onReceiveMessageCallback (event) {
+        console.log('Received Message',event.data);
+        // dataChannelReceive.value = event.data;
+    }
+
+</script>
+</body>
+
+</html>

@@ -48,7 +48,7 @@
 
         function connect() {
             console.log("connect", username)
-            ws = new WebSocket("ws://192.168.31.128:8000/ws/" + username + "/test");
+            ws = new WebSocket("ws://192.168.0.78:8000/ws/" + username + "/test");
             ws.addEventListener("open", connected)
             ws.addEventListener("message", message)
         }
@@ -75,7 +75,6 @@
 
         
         peerConnection.addEventListener('icecandidate', event => {
-            console.log("==icecandidate==", event)
             if (event.candidate) {
                 ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "candidate", candidate: event.candidate }))
             }
@@ -98,23 +97,6 @@
                 console.error(err);
             }
         };
-
-        // peerConnection.addEventListener('icecandidate', event => {
-        //     if (event.candidate) {
-        //         ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "candidate", candidate: event.candidate }))
-        //     }
-        // });
-
-
-        // peerConnection.onnegotiationneeded = async () => {
-        //     try {
-        //         const offer = await peerConnection.createOffer();
-        //         await peerConnection.setLocalDescription(offer);
-        //         ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "offer", offer: offer }))
-        //     } catch (err) {
-        //         console.error(err);
-        //     }
-        // };
 
         var isPlay = false
         async function message(item) {
@@ -169,7 +151,6 @@
           拨打电话
         */
         function call() {
-            
             navigator.mediaDevices.getUserMedia(constraints).then(stream => {
                 document.getElementById("myVideo").srcObject = stream
                 document.getElementById("myVideo").play()
@@ -179,7 +160,6 @@
                 console.error('Error accessing media devices.', error);
             });
         }
-
 
 
         async function createOffer() {

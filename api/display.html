@@ -1,0 +1,127 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>webrtc 屏幕共享</title>
+    <style>
+        #myVideo {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+<div>用户名: <span id="username"></span></div>
+
+<div>
+    <label for="item">对方ID:</label><input id="item" />
+</div>
+
+<div>
+    <div>对方屏幕内容<button onclick="call()">开始共享屏幕</button></div>
+    <video id="myVideo"></video>
+</div>
+
+<script>
+
+    function init() {
+        console.log("init")
+        username = ("" + Math.random()).replace(/\./, "")
+        document.getElementById("username").innerText = username
+        this.connect(true)
+    }
+    init();
+
+    function connect(connect) {
+        if (!connect) return;
+        console.log("connect", username)
+        ws = new WebSocket("ws://192.168.0.78:8000/ws/" + username + "/test");
+        ws.addEventListener("open", connected)
+        ws.addEventListener("message", message)
+    }
+
+    const constraints = {
+        'video': true,
+        'audio': true
+    }
+
+    /**
+     链接成功
+     */
+    function connected() {
+        console.log("链接成功")
+    }
+
+    const configuration = {
+        'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }],
+    }
+    /**
+     接收到消息
+     */
+    peerConnection = new RTCPeerConnection(configuration);
+
+    peerConnection.addEventListener('icecandidate', event => {
+        if (event.candidate) {
+            ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "candidate", candidate: event.candidate }))
+        }
+    });
+
+    peerConnection.onnegotiationneeded = async () => {
+        try {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "offer", offer: offer }))
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    peerConnection.onaddstream = function (evt) {
+        document.getElementById("myVideo").srcObject = evt.stream
+        document.getElementById("myVideo").play()
+    };
+
+    async function message(item) {
+        const data = JSON.parse(item.data);
+        if (data.code === 200) {
+            const { type, offer,candidate } = data.data;
+            if (type === "answer") {
+                const remoteDesc = new RTCSessionDescription(offer);
+                await peerConnection.setRemoteDescription(remoteDesc);
+                console.log("===peerConnection==", peerConnection)
+            } else if (type === "offer") { // 收到offer
+                peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                peerConnection.setLocalDescription(answer)
+                ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "answer", offer: answer }))
+            }else if(type ==="icecandidate") {
+                peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+        }
+        console.log("接收到消息", data)
+    }
+
+    /**
+     拨打电话
+     */
+    function call() {
+        createOffer()
+        navigator.mediaDevices.getDisplayMedia({video: true}).then(stream => {
+            peerConnection.addStream(stream)
+        }, error => {
+            console.log("Unable to acquire screen capture", error);
+        });
+
+    }
+
+    async function createOffer() {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        ws.send(JSON.stringify({ message: "消息来啦", group: "test", id: document.getElementById("item").value, type: "offer", offer: offer }))
+    }
+
+</script>
+</body>
+
+</html>
